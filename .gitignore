@@ -1,3 +1,5 @@
 .venv/
 opus-mt-en-zh/
 tts/
+dataSpace/
+quoraData/result/

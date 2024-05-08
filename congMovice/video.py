@@ -1,77 +1,72 @@
 import os
 import cv2
-from PIL import Image
-import numpy as np
 import math
 
 
 def make_background_video(total_time, workSpacePath):
     current_directory = os.path.join(os.getcwd(), 'dataSpace', workSpacePath)
-    # 获取存放图片的文件
+    # 获取存放图片的文件夹路径
     imagePath = os.path.join(current_directory, 'images')
 
+    # 设置视频输出文件夹路径
     output_directory = os.path.join(current_directory, 'video')
+    os.makedirs(output_directory, exist_ok=True)
     video_name = 'output.mp4'
-
-    mean_height = 0
-    mean_width = 0
 
     # 获取图片列表，仅包括图片文件
     image_files = [f for f in os.listdir(imagePath) if f.endswith((".jpg", ".jpeg", ".png"))]
+
+    print(image_files)
+
     num_of_images = len(image_files)
 
-    for file in image_files:
-        im = Image.open(os.path.join(imagePath, file))
-        width, height = im.size
-        mean_width += width
-        mean_height += height
-
-    mean_width = int(mean_width / num_of_images)
-    mean_height = int(mean_height / num_of_images)
-
-    for file in os.listdir('.'):
-        if file.endswith(".jpg") or file.endswith(".jpeg") or file.endswith("png"):
-            im = Image.open(os.path.join(imagePath, file))
-
-            width, height = im.size
-
     # 计算每张图片停留时间
+    video_secs = math.ceil(total_time / num_of_images) * 24
 
-    video_secs = math.ceil(total_time / num_of_images)
-    print(video_secs)
+    # 设置视频编码器
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 
-    # 生成视频函数
-    def generate_video():
+    # 设置目标视频尺寸
+    target_width, target_height = 640, 640
 
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        images = [img for img in os.listdir(imagePath)
-                  if img.endswith(".jpg") or
-                  img.endswith(".jpeg") or
-                  img.endswith("png")]
-        # 获取图片资源库的长度
-        num_images = len(images)
+    # 创建视频写入对象
+    output_path = os.path.join(output_directory, video_name)
+    video = cv2.VideoWriter(output_path, fourcc, 24, (target_width, target_height))  # 帧率设置为24
 
-        print(images)
+    # 遍历图片列表，生成视频
+    for image_name in image_files:
+        image_path = os.path.join(imagePath, image_name)
+        image = cv2.imread(image_path)
+        if image is None:
+            print(f"无法读取图片：{image_path}")
+            continue
+        height, width, _ = image.shape
 
-        frame = cv2.imread(os.path.join(imagePath, images[0]))
+        # 计算调整后的图像尺寸
+        if height < width:
+            scaled_image = cv2.resize(image, (target_width, int(height * (target_width / width))))
+            top_pad = max((target_height - scaled_image.shape[0]) // 2, 0)
+            bottom_pad = max(target_height - scaled_image.shape[0] - top_pad, 0)
+            left_pad, right_pad = 0, 0
+        else:
+            scaled_image = cv2.resize(image, (int(width * (target_height / height)), target_height))
+            left_pad = max((target_width - scaled_image.shape[1]) // 2, 0)
+            right_pad = max(target_width - scaled_image.shape[1] - left_pad, 0)
+            top_pad, bottom_pad = 0, 0
 
-        # 设置输出路径
-        output_path = os.path.join(output_directory, video_name)
+        # 图像填充
+        padded_image = cv2.copyMakeBorder(scaled_image, top_pad, bottom_pad, left_pad, right_pad, cv2.BORDER_CONSTANT,
+                                          value=(0, 0, 0))
 
-        # 获取视频针
-        height, width, layers = frame.shape
+        # 将调整后的图像写入视频
+        for _ in range(video_secs):
+            video.write(padded_image)
 
-        video = cv2.VideoWriter(output_path, fourcc, 1.0, (width, height))
-        print('正在输出视频')
-        for i, image_name in enumerate(images):
-            image_path = os.path.join(imagePath, image_name)
-            image = cv2.imread(image_path)
+    # 释放资源
+    video.release()
+    cv2.destroyAllWindows()
 
-            for _ in range(video_secs):
-                video.write(image)
-
-        cv2.destroyAllWindows()
-        video.release()  # releasing the video generated
-
-    generate_video()
     print('输出完成')
+
+
+# make_background_video(252, 'raw')

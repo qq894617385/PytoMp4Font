@@ -3,6 +3,7 @@ from datetime import datetime
 import torch
 from TTS.api import TTS
 from pymediainfo import MediaInfo
+
 print('正在初始化数据.....加载数据模型中')
 
 # Set up TTS environment
@@ -10,13 +11,15 @@ os.environ.setdefault('TTS_HOME', os.getcwd())
 device = "cuda" if torch.cuda.is_available() else "cpu"
 tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 
-print('加载完成....')
+print(f'加载完成....{device}')
+
 
 def get_media_duration(file_path):
     media_info = MediaInfo.parse(file_path)
     for track in media_info.tracks:
         if track.track_type == 'Audio':
             return track.duration
+
 
 def make_sound(textArr, workSpacePath):
     print('开始生成Ai语音')

@@ -1,5 +1,6 @@
 from moviepy.editor import *
 import os
+from natsort import natsorted
 
 
 def mp3_combine(workSpacePath):
@@ -9,7 +10,7 @@ def mp3_combine(workSpacePath):
         mp3_total_name = os.path.join(current_directory, "video", "combined.mp3")
 
         # 读取所有MP3文件并加载为AudioFileClip对象
-        clips = [AudioFileClip(os.path.join(directory_path, f)) for f in os.listdir(directory_path) if
+        clips = [AudioFileClip(os.path.join(directory_path, f)) for f in natsorted(os.listdir(directory_path)) if
                  f.endswith(".mp3")]
 
         # 使用concatenate_audio clips合并音频
@@ -37,14 +38,14 @@ def create_captions(textArr, workSpacePath, total_time):
     # 加载背景音乐
     mp3_total_name = os.path.join(current_directory, "video", "combined.mp3")
     bg_music = AudioFileClip(mp3_total_name)
-
+    print("添加配音完成")
     # 创建字幕剪辑列表
     clips = [video]
     for value in textArr:
         start = value['start'] / 1000  # 起始时间，以秒为单位
         duration = value['duration'] / 1000  # 持续时间，以秒为单位
         text = value['text']
-        txt_clip = (TextClip(text, fontsize=24, color='white', bg_color='black', font='SimHei')
+        txt_clip = (TextClip(text, fontsize=20, color='white', bg_color='black', font='SimHei')
                     .set_position(("center", video.h - 100)).set_start(start).set_duration(duration))
         clips.append(txt_clip)
 
