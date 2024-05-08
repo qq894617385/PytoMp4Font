@@ -1,33 +1,5 @@
 from moviepy.editor import *
 import os
-from natsort import natsorted
-
-
-def mp3_combine(workSpacePath):
-    try:
-        current_directory = os.path.join(os.getcwd(), 'dataSpace', workSpacePath)
-        directory_path = os.path.join(current_directory, 'sounds')
-        mp3_total_name = os.path.join(current_directory, "video", "combined.mp3")
-
-        # 读取所有MP3文件并加载为AudioFileClip对象
-        clips = [AudioFileClip(os.path.join(directory_path, f)) for f in natsorted(os.listdir(directory_path)) if
-                 f.endswith(".mp3")]
-
-        # 使用concatenate_audio clips合并音频
-        final_clip = concatenate_audioclips(clips)
-
-        # 导出合并后的音频文件
-        final_clip.write_audiofile(mp3_total_name)
-
-        # 关闭所有的AudioFileClip对象
-        for clip in clips:
-            clip.close()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        # 确保所有Clip被关闭
-        for clip in clips:
-            clip.close()
 
 
 def create_captions(textArr, workSpacePath, total_time):

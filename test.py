@@ -1,6 +1,7 @@
-from congMovice.sound import make_sound
-from congMovice.video import make_background_video
-from congMovice.captions import *
+# from congMovice.sound import make_sound
+# from congMovice.video import make_background_video
+# from congMovice.captions import create_captions
+from congMovice.backgroundMusic import mp3_combine
 import os
 import math
 

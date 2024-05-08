@@ -1,15 +1,13 @@
 from congMovice.sound import make_sound
 from congMovice.video import make_background_video
-from congMovice.captions import *
-import os
+from congMovice.captions import create_captions
+from congMovice.backgroundMusic import mp3_combine
 import math
 
 def main_create(texts, projectName):
     # 当前文件夹目录
     workSpacePath = projectName
     textArr = texts
-
-    #TODO： 查看是否有这个目录
 
     # 生成声音文件
     mp3List = make_sound(textArr, workSpacePath)
