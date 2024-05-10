@@ -4,6 +4,7 @@ from congMovice.captions import create_captions
 from congMovice.backgroundMusic import mp3_combine
 import math
 
+
 def main_create(texts, projectName):
     # 当前文件夹目录
     workSpacePath = projectName
@@ -34,9 +35,3 @@ def main_create(texts, projectName):
     print('全部完成....！')
 
     return
-
-
-
-
-
-

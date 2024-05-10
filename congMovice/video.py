@@ -1,7 +1,7 @@
 import os
 import cv2
 import math
-
+import numpy as np
 
 def make_background_video(total_time, workSpacePath):
     current_directory = os.path.join(os.getcwd(), 'dataSpace', workSpacePath)
@@ -33,6 +33,8 @@ def make_background_video(total_time, workSpacePath):
     output_path = os.path.join(output_directory, video_name)
     video = cv2.VideoWriter(output_path, fourcc, 24, (target_width, target_height))  # 帧率设置为24
 
+    black_image = np.zeros((640, 640, 3), dtype=np.uint8)
+
     # 遍历图片列表，生成视频
     for image_name in image_files:
         image_path = os.path.join(imagePath, image_name)
@@ -57,16 +59,36 @@ def make_background_video(total_time, workSpacePath):
         # 图像填充
         padded_image = cv2.copyMakeBorder(scaled_image, top_pad, bottom_pad, left_pad, right_pad, cv2.BORDER_CONSTANT,
                                           value=(0, 0, 0))
-
+        scale_factor = 1
         # 将调整后的图像写入视频
-        for _ in range(video_secs):
-            video.write(padded_image)
+        for a in range(video_secs):
+            if a <= 20:  # 前10帧为淡入效果
+                alpha = a * 0.05
+                alpha_image = cv2.addWeighted(black_image, 1 - alpha,  padded_image, alpha, 0)
+            elif a >= video_secs - 20:  # 后10帧为淡出效果
+                # 保持未放大完的效果
+                resized_image = cv2.resize(padded_image, None, fx=scale_factor, fy=scale_factor,
+                                           interpolation=cv2.INTER_LINEAR)
+                x_offset = max((resized_image.shape[1] - target_width) // 2, 0)
+                y_offset = max((resized_image.shape[0] - target_height) // 2, 0)
+                padded_image = resized_image[y_offset:y_offset + target_height, x_offset:x_offset + target_width]
+
+                alpha = (video_secs - a) * 0.05
+                alpha_image = cv2.addWeighted(padded_image, alpha, black_image, 1 - alpha, 0)
+            else:  # 中间帧保持不变
+                scale_factor = min(1.3, 1 + (a - 20) * 0.02)  # 限制放大倍数不超过1.6
+                resized_image = cv2.resize(padded_image, None, fx=scale_factor, fy=scale_factor,
+                                           interpolation=cv2.INTER_LINEAR)
+                x_offset = max((resized_image.shape[1] - target_width) // 2, 0)
+                y_offset = max((resized_image.shape[0] - target_height) // 2, 0)
+                alpha_image = resized_image[y_offset:y_offset + target_height, x_offset:x_offset + target_width]
+
+            video.write(alpha_image)
 
     # 释放资源
     video.release()
     cv2.destroyAllWindows()
 
     print('输出完成')
-
 
 # make_background_video(252, 'raw')

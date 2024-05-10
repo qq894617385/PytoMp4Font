@@ -1,14 +1,14 @@
 # from congMovice.sound import make_sound
-# from congMovice.video import make_background_video
+from congMovice.video import make_background_video
 # from congMovice.captions import create_captions
-from congMovice.backgroundMusic import mp3_combine
+# from congMovice.backgroundMusic import mp3_combine
 import os
 import math
 
 # 当前文件夹目录
 current_directory = os.getcwd()
 
-# make_background_video(252, 'raw')
+make_background_video(60, 'raw')
 
 
 # textArr = [
@@ -18,7 +18,7 @@ current_directory = os.getcwd()
 #     '我是人工智能合成的语音播报。'
 # ]
 #
-workSpacePath = 'raw'
+# workSpacePath = 'raw'
 #
 # # 生成声音文件
 # mp3List = make_sound(textArr, workSpacePath)
@@ -37,7 +37,7 @@ workSpacePath = 'raw'
 # make_background_video(total_time, workSpacePath)
 # print('视频背景图片制作完成')
 #
-mp3_combine(workSpacePath)
+# mp3_combine(workSpacePath)
 # print('合成MP3完成')
 #
 # print('开始补充字幕')

@@ -4,14 +4,20 @@ import torch
 from TTS.api import TTS
 from pymediainfo import MediaInfo
 
-print('正在初始化数据.....加载数据模型中')
+device = "cpu"
+tts = None
 
-# Set up TTS environment
-os.environ.setdefault('TTS_HOME', os.getcwd())
-device = "cuda" if torch.cuda.is_available() else "cpu"
-tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 
-print(f'加载完成....{device}')
+# 初始化
+def sound_factory_init():
+    print('正在初始化数据.....加载数据模型中')
+    global device, tts
+    # Set up TTS environment
+    os.environ.setdefault('TTS_HOME', os.getcwd())
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+
+    print(f'加载完成....{device}')
 
 
 def get_media_duration(file_path):
@@ -32,7 +38,7 @@ def make_sound(textArr, workSpacePath):
         span_name = str(index) + '.mp3'
         current_time = datetime.now()
         outputName = os.path.join(outputPath, span_name)
-        last_file = tts.tts_to_file(text=text, speaker_wav="voicelist/cn-sx.wav", speed=0.8, language="zh-cn",
+        last_file = tts.tts_to_file(text=text, speaker_wav="voicelist/cn-sx.wav", speed=0.9, language="zh-cn",
                                     file_path=outputName)
 
         duration = get_media_duration(last_file)
