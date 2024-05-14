@@ -1,4 +1,6 @@
 from flask import request, send_from_directory, abort, jsonify
+from werkzeug.utils import secure_filename
+
 from movie_main import main_create
 from concurrent.futures import ThreadPoolExecutor
 from congMovice.utils import *
@@ -8,44 +10,14 @@ executor = ThreadPoolExecutor(max_workers=5)
 
 
 def init_movie_factory(app):
-    @app.route('/textToAiVideo', methods=['POST', 'GET'])
+    @app.route('/makeMovie', methods=['POST', 'GET'])
     def txt2Video():
         request_json = request.json
-
-        if 'textArr' in request_json:
-            textArr = request_json['textArr']
+        if 'projectName' in request_json:
+            main_create(request_json['projectName'])
+            return jsonify(code=0, msg="Movie creation initiated successfully.")
         else:
-            file_path = f'dataSpace/raw/text.txt'
-
-            # 打开文件并读取内容
-            with open(file_path, 'r', encoding='utf-8') as file:
-                text = file.read()
-            text = text.replace("，", "。")
-            sentences = text.split('。')
-
-            new_data = []
-            i = 0
-            while i < len(sentences):
-                if len(sentences[i]) <= 6:
-                    # 如果当前字符串长度小于5，则与后一个字符串合并，并在它们之间加上逗号
-                    if i < len(sentences) - 1:
-                        merged_string = sentences[i] + ',' + sentences[i + 1]
-                        new_data.append(merged_string)
-                        i += 1  # 跳过已合并的下一个字符串
-                else:
-                    new_data.append(sentences[i])
-                i += 1
-            sentences = new_data
-            # 去除空白行
-            sentences = [sentence.strip() for sentence in sentences if sentence.strip()]
-
-            textArr = sentences
-        # 将main_create函数放入线程池异步执行
-        future = executor.submit(main_create, textArr, 'raw')
-        # 等待异步处理完成
-        file_path = future.result()
-        # return send_file(file_path, as_attachment=True)
-        return textArr
+            raise KeyError("The 'projectName' parameter is required but was not provided.")
 
     # 获取所有项目名
     @app.route('/getProjectNameList', methods=['POST', 'GET'])
@@ -62,7 +34,7 @@ def init_movie_factory(app):
         if 'projectName' in request_json:
             project_name = request_json['projectName']
 
-            if os.path.exists(f"/images/{root_path}/dataSpace/{project_name}"):
+            if os.path.exists(f"{root_path}/dataSpace/{project_name}"):
                 print("存在文件")
                 result = {}
 
@@ -85,7 +57,7 @@ def init_movie_factory(app):
                 # 获取图片数组
                 image_files = [f for f in os.listdir(images_path) if f.endswith((".jpg", ".jpeg", ".png"))]
 
-                full_paths = [f'{project_name}/' + file_name for file_name in image_files]
+                full_paths = [f'/{project_name}/images/' + file_name for file_name in image_files]
 
                 result['images'] = full_paths
 
@@ -135,11 +107,40 @@ def init_movie_factory(app):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/upload_image/<project_name>', methods=['POST'])
+    def upload_image(project_name):
+        image_directory = os.path.join('dataSpace', project_name, 'images')
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(image_directory, filename))
+            return jsonify({'message': 'File uploaded successfully'}), 201
+        return jsonify({'error': 'Invalid file type'}), 400
 
-    #TODO： 上传对应项目下的images文件夹 下图片
+    @app.route('/delete_image/<project_name>/<filename>', methods=['DELETE'])
+    def delete_image(project_name, filename):
+        image_path = os.path.join('dataSpace', project_name, 'images', secure_filename(filename))
+        if os.path.exists(image_path):
+            os.remove(image_path)
+            return jsonify({'message': 'Image deleted successfully'}), 200
+        return jsonify({'error': 'Image not found'}), 404
 
-    #TODO： 删除对应项目下的images文件夹 下的图片
+    @app.route('/update_text/<project_name>', methods=['POST'])
+    def update_text(project_name):
+        text_path = os.path.join('dataSpace', project_name, 'text.txt')
+        textArr = request.json.get('textArr')
 
-    #TODO： 修改对象项目下的 text.txt文件内容
+        if textArr is None:
+            return jsonify({'error': 'No text provided'}), 400
+        with open(text_path, 'w', encoding='utf-8') as file:
+            text_content = ''.join(textArr)
+            file.write(text_content)
+        return jsonify({'message': 'Text updated successfully'}), 200
 
-
+    def allowed_file(filename):
+        return '.' in filename and \
+            filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}

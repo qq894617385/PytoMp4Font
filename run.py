@@ -1,8 +1,11 @@
 from flask import Flask, request, jsonify, after_this_request
+from flask_cors import CORS
 import os
+
 
 def create_app():
     flask_app = Flask(__name__)
+    CORS(flask_app)
 
     from server.movie_factory import init_movie_factory
     init_movie_factory(flask_app)
@@ -42,8 +45,9 @@ def register_error_handlers(app):
 if __name__ == '__main__':
     app = create_app()
     os.environ.setdefault('root', os.getcwd())
-    # from congMovice.sound import sound_factory_init
-    #
-    # sound_factory_init()
+    from congMovice.sound import sound_factory_init
 
-    app.run(debug=True)
+    #
+    sound_factory_init()
+
+    app.run()

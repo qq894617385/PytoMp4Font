@@ -3,6 +3,8 @@ from datetime import datetime
 import torch
 from TTS.api import TTS
 from pymediainfo import MediaInfo
+import json
+from congMovice.utils import clear_folder
 
 device = "cpu"
 tts = None
@@ -27,31 +29,43 @@ def get_media_duration(file_path):
             return track.duration
 
 
-def make_sound(textArr, workSpacePath):
+def make_sound(workSpacePath):
     print('开始生成Ai语音')
     current_directory = os.path.join(os.getcwd(), 'dataSpace', workSpacePath)
     outputPath = os.path.join(current_directory, 'sounds')
+    jsonPath = os.path.join(current_directory, 'index.json')
     mp3List = []
     start = 0
 
-    for index, text in enumerate(textArr):
-        span_name = str(index) + '.mp3'
-        current_time = datetime.now()
-        outputName = os.path.join(outputPath, span_name)
-        last_file = tts.tts_to_file(text=text, speaker_wav="voicelist/cn-sx.wav", speed=0.9, language="zh-cn",
-                                    file_path=outputName)
+    with open(jsonPath, 'r', encoding='utf-8') as file:
+        jsonData = json.load(file)
+        text_arr = jsonData["textArr"]
 
-        duration = get_media_duration(last_file)
-        current_time1 = datetime.now()
-        delta = current_time1 - current_time
-        print(f"生成时间: {delta}, 文件名: {outputName}, 长度：{duration}")
-        mp3List.append({
-            "start": start,
-            "sound": span_name,
-            "duration": duration,
-            "text": text
-        })
-        start += duration
+        # 使用列表推导提取 text 字段
+        textArr = [item["text"] for item in text_arr]
+
+
+        print('先清空文件')
+        clear_folder(outputPath)
+
+        for index, text in enumerate(textArr):
+            span_name = str(index) + '.mp3'
+            current_time = datetime.now()
+            outputName = os.path.join(outputPath, span_name)
+            last_file = tts.tts_to_file(text=text, speaker_wav="voicelist/cn-sx.wav", speed=0.9, language="zh-cn",
+                                        file_path=outputName)
+
+            duration = get_media_duration(last_file)
+            current_time1 = datetime.now()
+            delta = current_time1 - current_time
+            print(f"生成时间: {delta}, 文件名: {outputName}, 长度：{duration}")
+            mp3List.append({
+                "start": start,
+                "sound": span_name,
+                "duration": duration,
+                "text": text
+            })
+            start += duration
 
     print('AI 语音完成')
     return mp3List

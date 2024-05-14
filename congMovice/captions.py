@@ -1,35 +1,76 @@
 from moviepy.editor import *
 import os
+import json
 
 
-def create_captions(textArr, workSpacePath, total_time):
+def create_video_from_json(workSpacePath):
     current_directory = os.path.join(os.getcwd(), 'dataSpace', workSpacePath)
-    imageMovie = os.path.join(current_directory, "video", "output.mp4")
-    video = VideoFileClip(imageMovie).subclip(0, total_time)
+    jsonPath = os.path.join(current_directory, 'index.json')
 
-    # 加载背景音乐
-    mp3_total_name = os.path.join(current_directory, "video", "combined.mp3")
-    bg_music = AudioFileClip(mp3_total_name)
-    print("添加配音完成")
-    # 创建字幕剪辑列表
-    clips = [video]
-    for value in textArr:
-        start = value['start'] / 1000  # 起始时间，以秒为单位
-        duration = value['duration'] / 1000  # 持续时间，以秒为单位
-        text = value['text']
-        txt_clip = (TextClip(text, fontsize=20, color='white', bg_color='black', font='SimHei')
-                    .set_position(("center", video.h - 100)).set_start(start).set_duration(duration))
-        clips.append(txt_clip)
+    # 加载 JSON 文件
+    with open(jsonPath, 'r', encoding='utf-8') as file:
+        json_data = json.load(file)
 
-    # 创建一个包含所有剪辑的CompositeVideoClip
-    result = CompositeVideoClip(clips).set_audio(bg_music)
+    output_directory = os.path.join(current_directory, "output")
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
 
-    allOutputFile = os.path.join(current_directory, "output", "last.mp4")
-    result.write_videofile(allOutputFile, fps=25)
-    print('输出last文件')
+    clips = []
 
-    # 关闭资源
-    video.close()
-    bg_music.close()
-    result.close()
-    return allOutputFile
+    # 背景音乐和图片目录
+    mp3_directory = os.path.join(current_directory, "sounds")
+
+    for idx, item in enumerate(json_data['textArr']):
+        text = item['text']
+        bg_image_path = os.path.join(current_directory, "images", item['bgi'])
+
+        # 读取配音文件
+        mp3_path = os.path.join(mp3_directory, f"{idx}.mp3")
+        audio_clip = AudioFileClip(mp3_path)
+        audio_duration = audio_clip.duration  # 获取音频持续时间
+        print(f"{audio_duration}多少秒")
+
+        # 加载背景图片并设置持续时间为音频持续时间
+        bg_image_clip = ImageClip(bg_image_path).set_duration(audio_duration)
+
+        # 获取图像尺寸并根据宽高比调整大小
+        img_width, img_height = bg_image_clip.size
+        if img_width > img_height:
+            scale_factor = 640 / float(img_width)
+        else:
+            scale_factor = 640 / float(img_height)
+        new_size = (int(img_width * scale_factor), int(img_height * scale_factor))
+
+        # 调整图片大小并保持比例
+        bg_image_clip = bg_image_clip.resize(new_size)
+
+        # 创建一个640x640的黑色背景
+        bg_color_clip = ColorClip(size=(640, 640), color=(0, 0, 0), duration=audio_duration)
+
+        # 将调整后的图片居中放置在黑色背景上
+        combined_clip = CompositeVideoClip([bg_color_clip, bg_image_clip.set_position("center")], size=(640, 640))
+
+        # 创建文字剪辑，并设置持续时间为音频持续时间
+        txt_clip = TextClip(text, fontsize=24, color='white', bg_color='black', font='SimHei').set_position(
+            'center').set_duration(audio_duration)
+
+        # 将文字剪辑合成到背景图片上
+        combined_clip = CompositeVideoClip([combined_clip, txt_clip.set_position(('center', 'bottom'))])
+        combined_clip = combined_clip.set_audio(audio_clip)  # 设置音频
+
+        clips.append(combined_clip)
+
+    # 合并所有视频剪辑
+    final_clip = concatenate_videoclips(clips, method="compose")
+
+    # 输出最终视频
+    final_output = os.path.join(output_directory, "final_output.mp4")
+    final_clip.write_videofile(final_output, codec='libx264', fps=24)
+
+    # 关闭所有剪辑
+    final_clip.close()
+    for clip in clips:
+        clip.close()
+        audio_clip.close()  # 确保关闭音频文件以释放资源
+
+    print("视频已成功生成：", final_output)
