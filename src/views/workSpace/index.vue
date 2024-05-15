@@ -61,7 +61,6 @@
     </el-drawer>
   </div>
   <div class="bottom-contant">
-    <el-button type="primary" @click="openImagePackage">图片库</el-button>
     <div style="flex: 1;"></div>
     <el-button type="primary" @click="save">保存</el-button>
     <el-button type="primary" @click="saveAndCreate">保存并生成</el-button>
@@ -82,13 +81,12 @@ import type { Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import imagePackage from './imagePackage.vue'
 import draggable from 'vuedraggable'
+import { defineExpose } from 'vue'
 
 const projectDetail = reactive({
   detail: null as ProjectDetail | null,
   error: null as Error | null,
 })
-
-const drag = ref(false)
 
 const textArr: Ref<ProjectDetail['textArr']> = ref([])
 
@@ -98,7 +96,7 @@ const currentIndex = ref(-1)
 
 const images: Ref<string[]> = ref([])
 
-const projectName = 'raw'
+const projectName: Ref<string> = ref('')
 
 const currentData: Ref<textItem> = ref({})
 
@@ -119,10 +117,11 @@ const changeIndexImages = (url: string) => {
   textArr.value[currentIndex.value].bgi = url
 }
 
-const fetchUser = async (projectName: string) => {
+const init = async (name: string) => {
+  projectName.value = name
   try {
     const detail = await getProjectDetail({
-      projectName,
+      projectName: projectName.value,
     })
     projectDetail.detail = detail
     textArr.value = detail.textArr
@@ -138,7 +137,7 @@ const save = async () => {
   try {
     projectDetail.detail!.textArr = textArr.value
     const detail = await savePorject({
-      projectName,
+      projectName: projectName.value,
       ProjectDetail: projectDetail.detail!,
     })
     ElMessage({
@@ -166,7 +165,7 @@ const saveAndCreate = async () => {
   await save()
   try {
     await makeMovie({
-      projectName,
+      projectName: projectName.value,
     })
     ElMessage({
       message: '创建视频成功',
@@ -182,9 +181,11 @@ const deleteRow = (index: number) => {
   textArr.value.splice(index, 1)
 }
 
-onMounted(() => {
-  fetchUser(projectName)
-})
+defineExpose({ init })
+
+export interface WorkspaceIndexInterface {
+  init: (projectName: string) => void
+}
 </script>
 
 <style lang="less" scoped>
