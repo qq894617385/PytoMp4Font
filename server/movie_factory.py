@@ -7,6 +7,8 @@ from congMovice.utils import *
 import os
 
 executor = ThreadPoolExecutor(max_workers=5)
+import json
+import shutil
 
 
 def init_movie_factory(app):
@@ -14,7 +16,10 @@ def init_movie_factory(app):
     def txt2Video():
         request_json = request.json
         if 'projectName' in request_json:
-            main_create(request_json['projectName'])
+            # 将main_create函数放入线程池异步执行
+            future = executor.submit(main_create, request_json['projectName'])
+            # 等待异步处理完成
+            file_path = future.result()
             return jsonify(code=0, msg="Movie creation initiated successfully.")
         else:
             raise KeyError("The 'projectName' parameter is required but was not provided.")
@@ -30,40 +35,25 @@ def init_movie_factory(app):
     def getDetailByName():
         request_json = request.json
         root_path = os.environ['root']
-        print(root_path)
         if 'projectName' in request_json:
             project_name = request_json['projectName']
 
             if os.path.exists(f"{root_path}/dataSpace/{project_name}"):
-                print("存在文件")
-                result = {}
-
-                openPath = os.path.join('dataSpace', project_name)
-
-                images_path = os.path.join(openPath, 'images')
-
-                text_path = os.path.join(openPath, 'text.txt')
-
-                if os.path.exists(text_path) and os.path.isfile(text_path):
-                    # 文件存在，读取并打印每一行
-                    with open(text_path, 'r', encoding='utf-8') as file:
-                        lines = file.readlines()
-                        result['textArr'] = lines
-                else:
-                    # 文件不存在，创建一个空的text.txt文件
-                    with open(text_path, 'w', encoding='utf-8') as file:
-                        print(f"创建了一个空文件: {text_path}")
-
-                # 获取图片数组
-                image_files = [f for f in os.listdir(images_path) if f.endswith((".jpg", ".jpeg", ".png"))]
-
-                full_paths = [f'/{project_name}/images/' + file_name for file_name in image_files]
-
-                result['images'] = full_paths
-
-                return result
-
-        return {}
+                file_path = f"{root_path}/dataSpace/{project_name}/index.json"
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as file:
+                        data = json.load(file)
+                        return data
+                except FileNotFoundError:
+                    print(f"Error: The file '{file_path}' does not exist.")
+                    return None
+                except json.JSONDecodeError:
+                    print(f"Error: The file '{file_path}' is not a valid JSON.")
+                    return None
+            else:
+                raise KeyError("不存在该项目")
+        else:
+            raise KeyError("丢失项目名称")
 
     # 读取图片
     @app.route('/images/<path:filename>')
@@ -87,7 +77,6 @@ def init_movie_factory(app):
         # 检查项目目录是否已存在
         if os.path.exists(project_path):
             return jsonify({'code': -1, 'error': 'Project already exists'}), 409  # 409 Conflict
-
         try:
             # 创建项目目录
             os.makedirs(project_path, exist_ok=True)
@@ -97,16 +86,44 @@ def init_movie_factory(app):
             for folder in subfolders:
                 os.makedirs(os.path.join(project_path, folder), exist_ok=True)
 
-            # 创建一个 text.txt 文件
-            text_file_path = os.path.join(project_path, 'text.txt')
-            with open(text_file_path, 'w') as f:
-                f.write('Initial content of the text file.')
+            # 创建一个 index.json 文件
+            json_file_path = os.path.join(project_path, 'index.json')
+            with open(json_file_path, 'w', encoding='utf-8') as file:
+                baseJsonData = {
+                    "title": project_name,
+                    "dict": project_name,
+                    "textArr": [
+                    ]
+                }
+                json.dump(baseJsonData, file, indent=4, ensure_ascii=False)
 
-            return jsonify({'message': f'Project {project_name} created successfully'}), 201
+            return jsonify({'message': f'Project {project_name} created successfully'}), 200
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    #删除项目
+    @app.route('/delete_project', methods=['POST'])
+    def del_project():
+        project_name = request.json.get('project_name')
+        if project_name:
+            root_path = os.environ['root']
+            project_path = os.path.join(root_path, 'dataSpace', project_name)
+
+            # 检查路径是否存在
+            if os.path.exists(project_path):
+                # 尝试删除目录
+                try:
+                    shutil.rmtree(project_path)
+                    return jsonify({'status': 'success', 'message': 'Project deleted successfully'}), 200
+                except Exception as e:
+                    return jsonify({'status': 'error', 'message': str(e)}), 500
+            else:
+                return jsonify({'status': 'error', 'message': 'Project not found'}), 404
+        else:
+            return jsonify({'status': 'error', 'message': 'No project name provided'}), 400
+
+    # 上传图片
     @app.route('/upload_image/<project_name>', methods=['POST'])
     def upload_image(project_name):
         image_directory = os.path.join('dataSpace', project_name, 'images')
@@ -118,7 +135,8 @@ def init_movie_factory(app):
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(image_directory, filename))
-            return jsonify({'message': 'File uploaded successfully'}), 201
+
+            return jsonify({'message': 'File uploaded successfully'}), 200
         return jsonify({'error': 'Invalid file type'}), 400
 
     @app.route('/delete_image/<project_name>/<filename>', methods=['DELETE'])
@@ -129,18 +147,43 @@ def init_movie_factory(app):
             return jsonify({'message': 'Image deleted successfully'}), 200
         return jsonify({'error': 'Image not found'}), 404
 
-    @app.route('/update_text/<project_name>', methods=['POST'])
-    def update_text(project_name):
-        text_path = os.path.join('dataSpace', project_name, 'text.txt')
-        textArr = request.json.get('textArr')
-
-        if textArr is None:
-            return jsonify({'error': 'No text provided'}), 400
-        with open(text_path, 'w', encoding='utf-8') as file:
-            text_content = ''.join(textArr)
-            file.write(text_content)
-        return jsonify({'message': 'Text updated successfully'}), 200
-
     def allowed_file(filename):
         return '.' in filename and \
             filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+
+    @app.route('/get_project_images/<project_name>', methods=['get', 'post'])
+    def get_project_images(project_name):
+        image_directory = os.path.join('dataSpace', project_name, 'images')
+        image_files = [f for f in os.listdir(image_directory) if f.endswith((".jpg", ".jpeg", ".png"))]
+        return jsonify({'images': image_files}), 200
+
+    # 保存项目
+    @app.route('/save_project/<project_name>', methods=['get', 'post'])
+    def save_project(project_name):
+        request_json = request.json
+        root_path = os.environ['root']
+        if project_name:
+            project_path = os.path.join(root_path, 'dataSpace', project_name)
+
+            baseJsonData = {}
+            json_file_path = f"{root_path}/dataSpace/{project_name}/index.json"
+            if os.path.exists(json_file_path):
+                try:
+                    with open(json_file_path, 'r', encoding='utf-8') as file:
+                        baseJsonData = json.load(file)
+                except FileNotFoundError:
+                    print(f"Error: The file '{json_file_path}' does not exist.")
+                    return None
+                except json.JSONDecodeError:
+                    print(f"Error: The file '{json_file_path}' is not a valid JSON.")
+                    return None
+            else:
+                baseJsonData = {}
+
+            # 获取传上来的数据
+            if request_json['detail']:
+                baseJsonData.update(request_json['detail'])
+                with open(json_file_path, 'w', encoding='utf-8') as file:
+                    json.dump(baseJsonData, file, indent=4, ensure_ascii=False)
+
+        return jsonify({'msg': '保存成功'}), 200
