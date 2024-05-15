@@ -1,45 +1,52 @@
 <template>
   <div class="workspace">
-    <div class="line-contant" v-for="(item, index) in textArr">
-      <div class="title-contant">
-        <div>元素{{ index + 1 }}：</div>
-        <div style="flex: 1;"></div>
-        <el-icon
-          style="cursor: pointer;"
-          color="#409eff"
-          @click="deleteRow(index)"
-        >
-          <Delete />
-        </el-icon>
-      </div>
-      <div class="row-contant">
-        <div class="text-contant">
-          <el-input
-            class="input-room"
-            v-model="item.text"
-            :rows="6"
-            type="textarea"
-            placeholder="Please input"
-          />
+    <draggable v-model="textArr" group="name">
+      <template #item="{ element, index }">
+        <div class="line-contant" :key="index">
+          <div class="title-contant">
+            <div>元素{{ index + 1 }}：</div>
+            <div style="flex: 1;"></div>
+            <el-icon
+              style="cursor: pointer;"
+              color="#409eff"
+              @click="deleteRow(index)"
+            >
+              <Delete />
+            </el-icon>
+          </div>
+          <div class="row-contant">
+            <div class="text-contant">
+              <el-input
+                class="input-room"
+                v-model="element.text"
+                :rows="6"
+                type="textarea"
+                placeholder="Please input"
+              />
+            </div>
+            <div
+              class="image-contant"
+              @click="showImagePackage(index, element)"
+            >
+              <div
+                class="black-bg"
+                style="width: 130px; height: 130px;"
+                v-if="element.bgi === ''"
+              ></div>
+              <el-image
+                v-else
+                style="width: 130px; height: 130px;"
+                :src="getSetImage(element?.bgi || '')"
+                :zoom-rate="1.2"
+                :max-scale="7"
+                :min-scale="0.2"
+                fit="cover"
+              />
+            </div>
+          </div>
         </div>
-        <div class="image-contant" @click="showImagePackage(index, item)">
-          <div
-            class="black-bg"
-            style="width: 130px; height: 130px;"
-            v-if="item.bgi === ''"
-          ></div>
-          <el-image
-            v-else
-            style="width: 130px; height: 130px;"
-            :src="getSetImage(item?.bgi || '')"
-            :zoom-rate="1.2"
-            :max-scale="7"
-            :min-scale="0.2"
-            fit="cover"
-          />
-        </div>
-      </div>
-    </div>
+      </template>
+    </draggable>
     <div class="add-contant" @click="addRow">
       <el-icon><Plus /></el-icon>
     </div>
@@ -74,11 +81,14 @@ import {
 import type { Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import imagePackage from './imagePackage.vue'
+import draggable from 'vuedraggable'
 
 const projectDetail = reactive({
   detail: null as ProjectDetail | null,
   error: null as Error | null,
 })
+
+const drag = ref(false)
 
 const textArr: Ref<ProjectDetail['textArr']> = ref([])
 
