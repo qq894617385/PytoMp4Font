@@ -180,7 +180,7 @@ const saveAndCreate = async () => {
       projectName: projectName.value,
     });
     ElMessage({
-      message: "创建视频成功",
+      message: "开始创建",
       type: "success",
     });
   } catch (error) {

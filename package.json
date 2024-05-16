@@ -24,6 +24,7 @@
     "axios": "^1.6.8",
     "less": "^4.0.0",
     "less-loader": "^8.0.0",
+    "socket.io-client": "^4.7.5",
     "typescript": "~4.5.5",
     "vuedraggable": "^4.1.0"
   }
