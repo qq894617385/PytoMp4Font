@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>SocketIO Client</title>
+        <script src="https://cdn.socket.io/4.0.0/socket.io.js"></script>
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                var socket = io('http://127.0.0.1:5000/');
+                var myCustomSid;
+            
+                socket.on('assign sid', function(data) {
+                    myCustomSid = data.custom_sid;
+                    console.log('Assigned Custom SID:', myCustomSid);
+                    // 可以选择立即或稍后将此SID注册回服务器
+                    socket.emit('register sid', {'custom_sid': myCustomSid});
+                });
+            });
+            </script>
+    </head>
+    <body>
+        <input type="text" id="sid" placeholder="Recipient's SID">
+        <input type="text" id="message" placeholder="Your message">
+        <button id="sendButton">Send Private Message</button>
+    </body>
+</html>

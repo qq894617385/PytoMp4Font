@@ -1,5 +1,5 @@
 <template>
-  <div class="home">
+  <div class="home" v-loading="loading">
     <el-tabs v-model="activeName" class="demo-tabs" @tab-click="handleClick">
       <el-tab-pane
         v-for="item in typeList"
@@ -11,7 +11,12 @@
     <workSpaceIndex ref="workSpaceIndexRef"></workSpaceIndex>
     <div class="del-contant">
       <el-button type="primary" @click="addProject" :icon="FolderAdd" />
-      <el-button type="primary" @click="delProject" :icon="Delete" />
+      <el-button
+        type="primary"
+        :loading="deleteloading"
+        @click="delProject"
+        :icon="Delete"
+      />
     </div>
     <el-drawer
       v-model="newProjectDrawer"
@@ -35,7 +40,9 @@
       </div>
       <template #footer>
         <div style="flex: auto">
-          <el-button type="primary" @click="createNewProject">创建</el-button>
+          <el-button :loading="addLoading" type="primary" @click="createNewProject"
+            >创建</el-button
+          >
         </div>
       </template>
     </el-drawer>
@@ -56,9 +63,16 @@ const newProjectName = ref<string>("");
 
 const newProjectDrawer = ref<Boolean>(false);
 
+const deleteloading = ref<Boolean>(false);
+
+const addLoading = ref<Boolean>(false);
+
+const loading = ref<Boolean>(false);
+
 const workSpaceIndexRef = ref<WorkspaceIndexInterface | null>(null);
 
 const fetchProjectList = async () => {
+  loading.value = true;
   try {
     const list = await getNewsList();
     typeList.value = list;
@@ -68,6 +82,8 @@ const fetchProjectList = async () => {
     }
   } catch (error) {
     console.error("Failed to fetch user details", error);
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -89,16 +105,22 @@ const delProject = () => {
     .then(async () => {
       // 这里放置删除逻辑
       console.log("项目已删除");
-      await deleteProject({
-        project_name: activeName.value,
-      });
+      deleteloading.value = true;
+      try {
+        await deleteProject({
+          project_name: activeName.value,
+        });
 
-      window.location.reload();
-      // 可选：显示操作成功的消息
-      ElMessage({
-        type: "success",
-        message: "删除成功!",
-      });
+        window.location.reload();
+        // 可选：显示操作成功的消息
+        ElMessage({
+          type: "success",
+          message: "删除成功!",
+        });
+      } catch {
+      } finally {
+        deleteloading.value = false;
+      }
     })
     .catch(() => {
       // 用户取消操作
@@ -116,15 +138,21 @@ const addProject = () => {
 
 // 创建新的项目
 const createNewProject = async () => {
-  await createProject({
-    project_name: newProjectName.value,
-  });
-  ElMessage({
-    type: "success",
-    message: "创建成功!",
-  });
+  addLoading.value = true;
+  try {
+    await createProject({
+      project_name: newProjectName.value,
+    });
+    ElMessage({
+      type: "success",
+      message: "创建成功!",
+    });
 
-  window.location.reload();
+    window.location.reload();
+  } catch {
+  } finally {
+    addLoading.value = false;
+  }
 };
 
 onMounted(fetchProjectList);
