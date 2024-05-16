@@ -1,16 +1,12 @@
 <template>
   <div class="workspace">
-    <draggable v-model="textArr" group="name">
+    <draggable v-model="textArr" group="name" item-key="index">
       <template #item="{ element, index }">
-        <div class="line-contant" :key="index">
+        <div class="line-contant" :key="'line' + index">
           <div class="title-contant">
             <div>元素{{ index + 1 }}：</div>
-            <div style="flex: 1;"></div>
-            <el-icon
-              style="cursor: pointer;"
-              color="#409eff"
-              @click="deleteRow(index)"
-            >
+            <div style="flex: 1"></div>
+            <el-icon style="cursor: pointer" color="#409eff" @click="deleteRow(index)">
               <Delete />
             </el-icon>
           </div>
@@ -24,18 +20,15 @@
                 placeholder="Please input"
               />
             </div>
-            <div
-              class="image-contant"
-              @click="showImagePackage(index, element)"
-            >
+            <div class="image-contant" @click="showImagePackage(index, element)">
               <div
                 class="black-bg"
-                style="width: 130px; height: 130px;"
+                style="width: 130px; height: 130px"
                 v-if="element.bgi === ''"
               ></div>
               <el-image
                 v-else
-                style="width: 130px; height: 130px;"
+                style="width: 130px; height: 130px"
                 :src="getSetImage(element?.bgi || '')"
                 :zoom-rate="1.2"
                 :max-scale="7"
@@ -60,131 +53,150 @@
       />
     </el-drawer>
   </div>
+  <outputDialog
+    v-if="dialogShow"
+    :projectName="projectName"
+    @close="closeOutView"
+  ></outputDialog>
   <div class="bottom-contant">
-    <div style="flex: 1;"></div>
+    <el-button type="primary" @click="openOutView">输出视频预览</el-button>
+    <div style="flex: 1"></div>
     <el-button type="primary" @click="save">保存</el-button>
     <el-button type="primary" @click="saveAndCreate">保存并生成</el-button>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from 'vue'
-import type { TabsPaneContext } from 'element-plus'
+import { ref, reactive, onMounted } from "vue";
+import type { TabsPaneContext } from "element-plus";
 import {
   getProjectDetail,
   ProjectDetail,
   textItem,
   savePorject,
   makeMovie,
-} from '@/api/workspace'
-import type { Ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import imagePackage from './imagePackage.vue'
-import draggable from 'vuedraggable'
-import { defineExpose } from 'vue'
+} from "@/api/workspace";
+import type { Ref } from "vue";
+import { ElMessage } from "element-plus";
+import imagePackage from "./imagePackage.vue";
+import draggable from "vuedraggable";
+import { defineExpose } from "vue";
+import outputDialog from "@/views/output/index.vue";
 
 const projectDetail = reactive({
   detail: null as ProjectDetail | null,
   error: null as Error | null,
-})
+});
 
-const textArr: Ref<ProjectDetail['textArr']> = ref([])
+const textArr: Ref<ProjectDetail["textArr"]> = ref([]);
 
-const drawer = ref(false)
+const drawer = ref(false);
 
-const currentIndex = ref(-1)
+const currentIndex = ref(-1);
 
-const images: Ref<string[]> = ref([])
+const images: Ref<string[]> = ref([]);
 
-const projectName: Ref<string> = ref('')
+const projectName: Ref<string> = ref("");
 
-const currentData: Ref<textItem> = ref({})
+const currentData: Ref<textItem> = ref({});
+
+const dialogShow = ref<Boolean>(false);
+
+// 打开预览视频
+const openOutView = () => {
+  dialogShow.value = true;
+};
+
+// 关闭预览视频
+const closeOutView = () => {
+  dialogShow.value = false;
+};
 
 const showImagePackage = (index: number, item: textItem) => {
-  drawer.value = true
-  currentIndex.value = index
-  currentData.value = item
-}
+  drawer.value = true;
+  currentIndex.value = index;
+  currentData.value = item;
+};
 
 const getSetImage = (url: string) => {
-  const dict = projectDetail.detail?.dict
-  const baseUrl = process.env.VUE_APP_API_URL
-  return `${baseUrl}/images/${dict}/images/${url}`
-}
+  const dict = projectDetail.detail?.dict;
+  const baseUrl = process.env.VUE_APP_API_URL;
+  return `${baseUrl}/images/${dict}/images/${url}`;
+};
 
 // 改变当前选中的图片背景
 const changeIndexImages = (url: string) => {
-  textArr.value[currentIndex.value].bgi = url
-}
+  textArr.value[currentIndex.value].bgi = url;
+};
 
 const init = async (name: string) => {
-  projectName.value = name
+  projectName.value = name;
   try {
     const detail = await getProjectDetail({
       projectName: projectName.value,
-    })
-    projectDetail.detail = detail
-    textArr.value = detail.textArr
-    images.value = detail.images
+    });
+    projectDetail.detail = detail;
+    textArr.value = detail.textArr;
+    images.value = detail.images;
   } catch (error) {
-    console.error('Failed to fetch user details', error)
+    console.error("Failed to fetch user details", error);
   }
-}
+};
 
-const activeName = ref('')
+const activeName = ref("");
 
 const save = async () => {
   try {
-    projectDetail.detail!.textArr = textArr.value
+    projectDetail.detail!.textArr = textArr.value;
     const detail = await savePorject({
       projectName: projectName.value,
       ProjectDetail: projectDetail.detail!,
-    })
+    });
     ElMessage({
-      message: '保存成功',
-      type: 'success',
-    })
+      message: "保存成功",
+      type: "success",
+    });
   } catch (error) {
-    console.error('保存失败', error)
+    console.error("保存失败", error);
   }
-}
+};
 
 const openImagePackage = (tab: TabsPaneContext, event: Event) => {
-  console.log(activeName.value)
-}
+  console.log(activeName.value);
+};
 
 // 添加图片
 const addRow = () => {
   textArr.value.push({
-    bgi: '',
-    text: '',
-  })
-}
+    bgi: "",
+    text: "",
+  });
+};
 
 const saveAndCreate = async () => {
-  await save()
+  await save();
   try {
     await makeMovie({
       projectName: projectName.value,
-    })
+    });
     ElMessage({
-      message: '创建视频成功',
-      type: 'success',
-    })
+      message: "创建视频成功",
+      type: "success",
+    });
   } catch (error) {
-    console.error('保存失败', error)
+    console.error("保存失败", error);
   }
-}
+};
 
 // 删除该行
 const deleteRow = (index: number) => {
-  textArr.value.splice(index, 1)
-}
+  textArr.value.splice(index, 1);
+};
 
-defineExpose({ init })
+defineExpose({ init });
 
 export interface WorkspaceIndexInterface {
-  init: (projectName: string) => void
+  init: (projectName: string) => void;
 }
 </script>
 
