@@ -60,6 +60,7 @@
   ></outputDialog>
   <div class="bottom-contant">
     <el-button type="primary" @click="openOutView">输出视频预览</el-button>
+    <aiMakeImage :projectName="projectName" />
     <div style="flex: 1"></div>
     <el-button type="primary" @click="save">保存</el-button>
     <el-button type="primary" @click="saveAndCreate">保存并生成</el-button>
@@ -82,6 +83,7 @@ import imagePackage from "./imagePackage.vue";
 import draggable from "vuedraggable";
 import { defineExpose } from "vue";
 import outputDialog from "@/views/output/index.vue";
+import aiMakeImage from "./aiMakeImage.vue";
 
 const projectDetail = reactive({
   detail: null as ProjectDetail | null,

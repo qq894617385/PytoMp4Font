@@ -28,3 +28,14 @@ export function createProject(data: { project_name: string }): Promise<{ images:
         payload: data
     }).then(response => response.data);
 }
+
+
+// Ai 创建图片
+
+export function createAiImage(data: { text: string, projectName: string }): Promise<{}> {
+    return request<{ images: string[] }>({
+        method: 'post',
+        url: `${baseUrl}/make_null_to_images`,
+        payload: data
+    }).then(response => response.data);
+}
