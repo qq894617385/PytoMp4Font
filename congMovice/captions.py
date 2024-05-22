@@ -4,7 +4,8 @@ import json
 
 
 def create_video_from_json(workSpacePath):
-    current_directory = os.path.join(os.getcwd(), 'dataSpace', workSpacePath)
+    root_path = os.environ['root']
+    current_directory = os.path.join(root_path, 'dataSpace', workSpacePath)
     jsonPath = os.path.join(current_directory, 'index.json')
 
     # 加载 JSON 文件

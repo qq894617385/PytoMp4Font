@@ -1,5 +1,5 @@
 .venv/
-opus-mt-en-zh/
-tts/
-dataSpace/
-quoraData/result/
+static/image_model
+static/lang_model
+static/tts
+build/

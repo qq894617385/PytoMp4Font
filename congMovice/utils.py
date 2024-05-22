@@ -39,3 +39,14 @@ def clear_folder(folder_path):
                 print(f"Deleted folder: {file_path}")
         except Exception as e:
             print(f"Failed to delete {file_path}. Reason: {e}")
+
+
+
+def get_video_stream(path):
+    """这里应该是获取视频流的逻辑，以下代码假设你有一个视频文件路径。"""
+    with open(path, 'rb') as video:
+        while True:
+            data = video.read(1024 * 1024)  # 读取1MB大小的数据块
+            if not data:
+                break
+            yield data

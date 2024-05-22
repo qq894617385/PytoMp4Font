@@ -1,20 +1,17 @@
 from congMovice.sound import make_sound, sound_factory_init
-from congMovice.video import make_background_video
-from congMovice.captions import create_video_from_json
-from congMovice.backgroundMusic import mp3_combine
+# from congMovice.video import make_background_video
+# from congMovice.captions import create_video_from_json
+# from congMovice.backgroundMusic import mp3_combine
 import os
 import math
 
-# 当前文件夹目录
-current_directory = os.getcwd()
-
 workSpacePath = 'raw'
 
-# sound_factory_init()
+sound_factory_init()
 # # 生成声音文件
-# mp3List = make_sound(workSpacePath)
+mp3List = make_sound(workSpacePath)
 
-create_video_from_json(workSpacePath)
+# create_video_from_json(workSpacePath)
 
 # # 根据语音总的长度生成,总的视频预览图
 # print(mp3List)

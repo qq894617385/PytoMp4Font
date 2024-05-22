@@ -3,6 +3,7 @@ import cv2
 import math
 import numpy as np
 
+
 def make_background_video(total_time, workSpacePath):
     current_directory = os.path.join(os.getcwd(), 'dataSpace', workSpacePath)
     # 获取存放图片的文件夹路径
@@ -64,7 +65,7 @@ def make_background_video(total_time, workSpacePath):
         for a in range(video_secs):
             if a <= 20:  # 前10帧为淡入效果
                 alpha = a * 0.05
-                alpha_image = cv2.addWeighted(black_image, 1 - alpha,  padded_image, alpha, 0)
+                alpha_image = cv2.addWeighted(black_image, 1 - alpha, padded_image, alpha, 0)
             elif a >= video_secs - 20:  # 后10帧为淡出效果
                 # 保持未放大完的效果
                 resized_image = cv2.resize(padded_image, None, fx=scale_factor, fy=scale_factor,

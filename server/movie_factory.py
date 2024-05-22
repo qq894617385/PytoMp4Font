@@ -1,14 +1,15 @@
-from flask import request, send_from_directory, abort, jsonify
+from flask import request, Response, send_from_directory, abort, jsonify
 from werkzeug.utils import secure_filename
-
 from movie_main import main_create
 from concurrent.futures import ThreadPoolExecutor
 from congMovice.utils import *
 import os
-
-executor = ThreadPoolExecutor(max_workers=5)
 import json
 import shutil
+# 引入socket
+from server.mysocket import get_socketio
+
+executor = ThreadPoolExecutor(max_workers=5)
 
 
 def init_movie_factory(app):
@@ -17,17 +18,21 @@ def init_movie_factory(app):
         request_json = request.json
         if 'projectName' in request_json:
             # 将main_create函数放入线程池异步执行
-            future = executor.submit(main_create, request_json['projectName'])
+            socketio = get_socketio()
+            print("socketio instance:", socketio)
+
+            executor.submit(main_create, request_json['projectName'], socketio)
             # 等待异步处理完成
-            file_path = future.result()
-            return jsonify(code=0, msg="Movie creation initiated successfully.")
+            return jsonify({}), 200
         else:
             raise KeyError("The 'projectName' parameter is required but was not provided.")
 
     # 获取所有项目名
     @app.route('/getProjectNameList', methods=['POST', 'GET'])
     def getProjectName():
-        folders = list_subdirectories("dataSpace")
+        # 获取static目录下dataSpace文件夹下的所有文件夹
+        root_path = os.environ['root']
+        folders = list_subdirectories(os.path.join(root_path, 'dataSpace'))
         return folders
 
     # 根据项目所在的地址获取相关图片信息
@@ -65,6 +70,19 @@ def init_movie_factory(app):
         if not os.path.isfile(os.path.join(image_directory, filename)):
             abort(404)  # 如果文件不存在，返回 404 错误
         return send_from_directory(image_directory, filename)
+
+    # 读取视频
+    @app.route('/video/<path:projectName>')
+    def get_video(projectName):
+        root_path = os.environ['root']
+
+        project_path = os.path.join(root_path, 'dataSpace', projectName)
+        if os.path.exists(project_path):
+            # 指定你的图片存放路径
+            video_directory = os.path.join(project_path, 'output', 'final_output.mp4')
+            return Response(get_video_stream(video_directory), mimetype='video/mp4')
+        else:
+            return jsonify({'error': '视频丢失'}), 500
 
     # 新建项目
     @app.route('/create_project', methods=['POST'])
@@ -153,7 +171,8 @@ def init_movie_factory(app):
 
     @app.route('/get_project_images/<project_name>', methods=['get', 'post'])
     def get_project_images(project_name):
-        image_directory = os.path.join('dataSpace', project_name, 'images')
+        root_path = os.environ['root']
+        image_directory = os.path.join(root_path, 'dataSpace', project_name, 'images')
         image_files = [f for f in os.listdir(image_directory) if f.endswith((".jpg", ".jpeg", ".png"))]
         return jsonify({'images': image_files}), 200
 
@@ -166,7 +185,7 @@ def init_movie_factory(app):
             project_path = os.path.join(root_path, 'dataSpace', project_name)
 
             baseJsonData = {}
-            json_file_path = f"{root_path}/dataSpace/{project_name}/index.json"
+            json_file_path = os.path.join(project_path, 'index.json')
             if os.path.exists(json_file_path):
                 try:
                     with open(json_file_path, 'r', encoding='utf-8') as file:

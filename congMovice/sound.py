@@ -14,8 +14,12 @@ tts = None
 def sound_factory_init():
     print('正在初始化数据.....加载数据模型中')
     global device, tts
+
+    # 获取当前目录下的static的tts文件夹
+    tts_path = os.path.join(os.environ['root'])
+
     # Set up TTS environment
-    os.environ.setdefault('TTS_HOME', os.getcwd())
+    os.environ.setdefault('TTS_HOME', tts_path)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 
@@ -31,7 +35,8 @@ def get_media_duration(file_path):
 
 def make_sound(workSpacePath):
     print('开始生成Ai语音')
-    current_directory = os.path.join(os.getcwd(), 'dataSpace', workSpacePath)
+    root_path = os.environ['root']
+    current_directory = os.path.join(root_path, 'dataSpace', workSpacePath)
     outputPath = os.path.join(current_directory, 'sounds')
     jsonPath = os.path.join(current_directory, 'index.json')
     mp3List = []
@@ -52,7 +57,10 @@ def make_sound(workSpacePath):
             span_name = str(index) + '.mp3'
             current_time = datetime.now()
             outputName = os.path.join(outputPath, span_name)
-            last_file = tts.tts_to_file(text=text, speaker_wav="voicelist/cn-sx.wav", speed=0.9, language="zh-cn",
+
+            wav_path = os.path.join(root_path, 'voicelist/cn-sx.wav')
+
+            last_file = tts.tts_to_file(text=text, speaker_wav=wav_path, speed=0.9, language="zh-cn",
                                         file_path=outputName)
 
             duration = get_media_duration(last_file)
