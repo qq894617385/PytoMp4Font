@@ -1,0 +1,25 @@
+{
+    "title": "测试项目",
+    "dict": "raw",
+    "images": [
+        "0.jpg",
+        "1.jpg",
+        "2.jpg",
+        "3.jpg",
+        "4.jpg"
+    ],
+    "textArr": [
+        {
+            "bgi": "1.jpg",
+            "text": "测试音效233213123"
+        },
+        {
+            "bgi": "2.jpg",
+            "text": "测试音效dddd"
+        },
+        {
+            "bgi": "20240517170114.jpg",
+            "text": "啦啦啦"
+        }
+    ]
+}
