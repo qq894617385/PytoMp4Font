@@ -6,6 +6,10 @@ export interface ProjectDetail {
     images: string[]
     title: string
     dict: string
+    project: {
+        height: number
+        width: number
+    },
     textArr: Array<textItem>
 }
 
@@ -13,6 +17,10 @@ export interface ProjectDetail {
 export interface textItem {
     bgi?: string
     text?: string
+    bgc?: string
+    fontSize?: number
+    marginBottom?: number
+    color?: string
 }
 
 export function getProjectDetail(data: { projectName: string }): Promise<ProjectDetail> {
@@ -41,9 +49,18 @@ export function savePorject(data: { projectName: string, ProjectDetail: ProjectD
     }).then(response => response.data);
 }
 
+export function MakeEveryVideo(data: { projectName: string }): Promise<any> {
+    return request<any>({
+        method: 'post',
+        url: `${baseUrl}/makeMovie`,
+        payload: data
+    }).then(response => response.data);
+}
 
-export function makeMovie(data: { projectName: string }): Promise<{ images: string[] }> {
-    return request<{ images: string[] }>({
+
+
+export function makeMovie(data: { projectName: string }): Promise<any> {
+    return request<any>({
         method: 'post',
         url: `${baseUrl}/makeMovie`,
         payload: data

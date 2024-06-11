@@ -11,6 +11,24 @@
             </el-icon>
           </div>
           <div class="row-contant">
+            <div class="text-props">
+              <div>
+                <span class="span-text">颜色背景：</span>
+                <el-color-picker v-model="element.bgc" size="small" />
+              </div>
+              <div>
+                <span class="span-text">字体大小：</span>
+                <el-input-number v-model="element.fontSize" :step="1" size="small" />
+              </div>
+              <div>
+                <span class="span-text">颜色：</span>
+                <el-color-picker v-model="element.color" size="small" />
+              </div>
+              <div>
+                <span class="span-text">底边距：</span>
+                <el-input-number v-model="element.marginBottom" :step="1" size="small" />
+              </div>
+            </div>
             <div class="text-contant">
               <el-input
                 class="input-room"
@@ -19,6 +37,12 @@
                 type="textarea"
                 placeholder="Please input"
               />
+            </div>
+            <div class="video-contant">
+              <video controls width="200px" height="200px">
+                <source :src="getVideo(index)" type="video/mp4" />
+                没有视频
+              </video>
             </div>
             <div class="image-contant" @click="showImagePackage(index, element)">
               <div
@@ -62,13 +86,21 @@
     <el-button type="primary" @click="openOutView">输出视频预览</el-button>
     <aiMakeImage :projectName="projectName" />
     <div style="flex: 1"></div>
+    <span class="span-text">宽：</span>
+    <el-input-number v-model="projectWidth" :step="1" />
+    <span class="span-text">高：</span>
+    <el-input-number v-model="projectHeight" :step="1" />
+    <div style="flex: 1"></div>
+
     <el-button type="primary" @click="save">保存</el-button>
-    <el-button type="primary" @click="saveAndCreate">保存并生成</el-button>
+    <el-button type="warning" @click="hanldeEveryVideo">生成每段视频</el-button>
+    <el-button type="warning" @click="save">合并</el-button>
+    <el-button type="danger" @click="saveAndCreate">一键生成</el-button>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, computed } from "vue";
 import type { TabsPaneContext } from "element-plus";
 import {
   getProjectDetail,
@@ -76,6 +108,7 @@ import {
   textItem,
   savePorject,
   makeMovie,
+  MakeEveryVideo,
 } from "@/api/workspace";
 import type { Ref } from "vue";
 import { ElMessage } from "element-plus";
@@ -86,8 +119,39 @@ import outputDialog from "@/views/output/index.vue";
 import aiMakeImage from "./aiMakeImage.vue";
 
 const projectDetail = reactive({
-  detail: null as ProjectDetail | null,
+  detail: {
+    images: [],
+    title: "",
+    dict: "",
+    project: {
+      height: 0,
+      width: 0,
+    },
+    textArr: [],
+  } as ProjectDetail | null,
   error: null as Error | null,
+});
+
+const projectWidth = computed({
+  get() {
+    return projectDetail.detail?.project.width || 0;
+  },
+  set(value) {
+    if (projectDetail.detail) {
+      projectDetail.detail.project.width = value;
+    }
+  },
+});
+
+const projectHeight = computed({
+  get() {
+    return projectDetail.detail?.project.height || 0;
+  },
+  set(value) {
+    if (projectDetail.detail) {
+      projectDetail.detail.project.height = value;
+    }
+  },
 });
 
 const textArr: Ref<ProjectDetail["textArr"]> = ref([]);
@@ -126,6 +190,12 @@ const getSetImage = (url: string) => {
   return `${baseUrl}/images/${dict}/images/${url}`;
 };
 
+const getVideo = (url: string) => {
+  const dict = projectDetail.detail?.dict;
+  const baseUrl = process.env.VUE_APP_API_URL;
+  return `${baseUrl}/videoSpan/${dict}/${url}`;
+};
+
 // 改变当前选中的图片背景
 const changeIndexImages = (url: string) => {
   textArr.value[currentIndex.value].bgi = url;
@@ -138,6 +208,7 @@ const init = async (name: string) => {
       projectName: projectName.value,
     });
     projectDetail.detail = detail;
+
     textArr.value = detail.textArr;
     images.value = detail.images;
   } catch (error) {
@@ -172,6 +243,10 @@ const addRow = () => {
   textArr.value.push({
     bgi: "",
     text: "",
+    bgc: "#000",
+    fontSize: 24,
+    marginBottom: 60,
+    color: "#fff",
   });
 };
 
@@ -179,6 +254,21 @@ const saveAndCreate = async () => {
   await save();
   try {
     await makeMovie({
+      projectName: projectName.value,
+    });
+    ElMessage({
+      message: "开始创建",
+      type: "success",
+    });
+  } catch (error) {
+    console.error("保存失败", error);
+  }
+};
+
+const hanldeEveryVideo = async () => {
+  await save();
+  try {
+    await MakeEveryVideo({
       projectName: projectName.value,
     });
     ElMessage({
@@ -246,8 +336,10 @@ export interface WorkspaceIndexInterface {
 .bottom-contant {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   width: 100%;
   padding: 10px 16px;
+  border-top: 2px solid #ececec;
 }
 
 .add-contant {
@@ -269,5 +361,18 @@ export interface WorkspaceIndexInterface {
   display: flex;
   font-weight: 600;
   color: #333;
+}
+
+.span-text {
+  margin-left: 12px;
+  color: #409eff;
+}
+
+.text-props {
+  width: 250px;
+}
+
+.video-contant {
+  margin-left: 30px;
 }
 </style>
