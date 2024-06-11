@@ -57,6 +57,13 @@ export function MakeEveryVideo(data: { projectName: string }): Promise<any> {
     }).then(response => response.data);
 }
 
+export function mergeVideo(data: { projectName: string }): Promise<any> {
+    return request<any>({
+        method: 'post',
+        url: `${baseUrl}/mergeVideo`,
+        payload: data
+    }).then(response => response.data);
+}
 
 
 export function makeMovie(data: { projectName: string }): Promise<any> {

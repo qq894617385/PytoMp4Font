@@ -94,7 +94,7 @@
 
     <el-button type="primary" @click="save">保存</el-button>
     <el-button type="warning" @click="hanldeEveryVideo">生成每段视频</el-button>
-    <el-button type="warning" @click="save">合并</el-button>
+    <el-button type="warning" @click="combine">合并</el-button>
     <el-button type="danger" @click="saveAndCreate">一键生成</el-button>
   </div>
 </template>
@@ -109,6 +109,7 @@ import {
   savePorject,
   makeMovie,
   MakeEveryVideo,
+  mergeVideo,
 } from "@/api/workspace";
 import type { Ref } from "vue";
 import { ElMessage } from "element-plus";
@@ -254,6 +255,20 @@ const saveAndCreate = async () => {
   await save();
   try {
     await makeMovie({
+      projectName: projectName.value,
+    });
+    ElMessage({
+      message: "开始创建",
+      type: "success",
+    });
+  } catch (error) {
+    console.error("保存失败", error);
+  }
+};
+
+const combine = async () => {
+  try {
+    await mergeVideo({
       projectName: projectName.value,
     });
     ElMessage({
