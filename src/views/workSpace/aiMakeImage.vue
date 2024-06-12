@@ -19,6 +19,22 @@
           clearable
         ></el-input>
       </div>
+      <div class="raw-contant">
+        <div>宽度：</div>
+        <el-input-number
+          v-model="imageProps.width"
+          :min="0"
+          :max="10000"
+        ></el-input-number>
+      </div>
+      <div class="raw-contant">
+        <div>高度：</div>
+        <el-input-number
+          v-model="imageProps.height"
+          :min="0"
+          :max="10000"
+        ></el-input-number>
+      </div>
     </div>
     <template #footer>
       <div class="dialog-footer">
@@ -40,6 +56,11 @@ const props = defineProps<{
 
 const aiDialog = ref(false);
 
+const imageProps = ref({
+  width: 640,
+  height: 640,
+});
+
 const AiDes = ref<string>("");
 
 const createTask = async () => {
@@ -47,6 +68,7 @@ const createTask = async () => {
   await createAiImage({
     text: AiDes.value,
     projectName: props.projectName,
+    props: imageProps.value,
   });
   ElMessage({
     message: "提高生成图片人物成功",
@@ -65,6 +87,7 @@ const handleClose = (done: () => void) => {
 
 <style lang="less" scoped>
 .raw-contant {
+  margin: 10px 0;
   display: flex;
   align-items: center;
 }

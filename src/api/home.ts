@@ -32,7 +32,12 @@ export function createProject(data: { project_name: string }): Promise<{ images:
 
 // Ai 创建图片
 
-export function createAiImage(data: { text: string, projectName: string }): Promise<{}> {
+export function createAiImage(data: {
+    text: string, projectName: string, props: {
+        width: number
+        height: number
+    }
+}): Promise<{}> {
     return request<{ images: string[] }>({
         method: 'post',
         url: `${baseUrl}/make_null_to_images`,
