@@ -9,8 +9,6 @@ This frontend project is used for the AI-assisted image generation and video lay
 npm install
 ```
 
-````
-
 ### 编译并热加载用于开发 / Compiles and Hot-Reloads for Development
 
 ```bash
@@ -45,4 +43,3 @@ const socket = io(SOCKET_URL); // Modify according to your server address
 
 export default socket;
 ```
-````
