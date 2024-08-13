@@ -10,6 +10,8 @@ export interface ProjectDetail {
         height: number
         width: number
     },
+    bgm: string,
+    voice: string,
     textArr: Array<textItem>
 }
 
@@ -74,6 +76,17 @@ export function makeMovie(data: { projectName: string }): Promise<any> {
     }).then(response => response.data);
 }
 
+export function getAllBGM(): Promise<any> {
+    return request<any>({
+        method: 'get',
+        url: `${baseUrl}/bgm_list`,
+    }).then(response => response.data);
+}
 
-
+export function getAllvoicelist(): Promise<any> {
+    return request<any>({
+        method: 'get',
+        url: `${baseUrl}/voicelist`,
+    }).then(response => response.data);
+}
 

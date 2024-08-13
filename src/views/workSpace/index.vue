@@ -1,5 +1,17 @@
 <template>
   <div class="workspace">
+    <div class="top-contant">
+      <span>背景音乐：</span>
+      <!-- 获取bgm -->
+      <el-select v-model="value" placeholder="Select" style="width: 240px">
+        <el-option v-for="item in bgmList" :key="item" :label="item" :value="item" />
+      </el-select>
+      <span>背景音乐：</span>
+      <!-- 获取bgm -->
+      <el-select v-model="value" placeholder="Select" style="width: 240px">
+        <el-option v-for="item in aiMusicList" :key="item" :label="item" :value="item" />
+      </el-select>
+    </div>
     <draggable v-model="textArr" group="name" item-key="index">
       <template #item="{ element, index }">
         <div class="line-contant" :key="'line' + index">
@@ -110,6 +122,8 @@ import {
   makeMovie,
   MakeEveryVideo,
   mergeVideo,
+  getAllBGM,
+  getAllvoicelist,
 } from "@/api/workspace";
 import type { Ref } from "vue";
 import { ElMessage } from "element-plus";
@@ -128,6 +142,8 @@ const projectDetail = reactive({
       height: 0,
       width: 0,
     },
+    bgm: "",
+    voice: "",
     textArr: [],
   } as ProjectDetail | null,
   error: null as Error | null,
@@ -169,6 +185,22 @@ const currentData: Ref<textItem> = ref({});
 
 const dialogShow = ref<Boolean>(false);
 
+const value = ref("");
+
+const bgmList = ref([]);
+
+const aiMusicList = ref([]);
+
+// 获取所有bgm
+const getBGM = async () => {
+  const bgm = await getAllBGM();
+  bgmList.value = bgm.mp3List;
+};
+
+const getAiMusic = async () => {
+  const aiMusic = await getAllvoicelist();
+  aiMusicList.value = aiMusic.voice_list;
+};
 // 打开预览视频
 const openOutView = () => {
   dialogShow.value = true;
@@ -203,6 +235,8 @@ const changeIndexImages = (url: string) => {
 };
 
 const init = async (name: string) => {
+  getBGM();
+  getAiMusic();
   projectName.value = name;
   try {
     const detail = await getProjectDetail({
@@ -389,5 +423,14 @@ export interface WorkspaceIndexInterface {
 
 .video-contant {
   margin-left: 30px;
+}
+
+.top-contant {
+  background: #f0f0f0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
 }
 </style>
